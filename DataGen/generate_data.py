@@ -1,11 +1,12 @@
 import numpy as np
 from uniform_instance_gen import uni_instance_gen
 
-j = 20
-m = 10
-l = 1
+
+j = 3 #20
+m = 2 # 10
+l = 0
 h = 99
-batch_size = 100
+batch_size = 3 #100
 seed = 200
 
 np.random.seed(seed)

@@ -8,11 +8,13 @@ import time
 
 device = configs.device
 
+print("device ", device)
+
 parser = argparse.ArgumentParser(description='Arguments for test_learned_on_benchmark')
-parser.add_argument('--Pn_j', type=int, default=30, help='Number of jobs of instances to test')
-parser.add_argument('--Pn_m', type=int, default=20, help='Number of machines instances to test')
-parser.add_argument('--Nn_j', type=int, default=30, help='Number of jobs on which to be loaded net are trained')
-parser.add_argument('--Nn_m', type=int, default=20, help='Number of machines on which to be loaded net are trained')
+parser.add_argument('--Pn_j', type=int, default=20, help='Number of jobs of instances to test')
+parser.add_argument('--Pn_m', type=int, default=15, help='Number of machines instances to test')
+parser.add_argument('--Nn_j', type=int, default=10, help='Number of jobs on which to be loaded net are trained')
+parser.add_argument('--Nn_m', type=int, default=10, help='Number of machines on which to be loaded net are trained')
 parser.add_argument('--which_benchmark', type=str, default='tai', help='Which benchmark to test')
 params = parser.parse_args()
 
@@ -25,7 +27,7 @@ LOW = configs.low
 HIGH = configs.high
 
 from JSSP_Env import SJSSP
-from PPO_jssp_multiInstances import PPO
+from train import PPO
 env = SJSSP(n_j=N_JOBS_P, n_m=N_MACHINES_P)
 
 ppo = PPO(configs.lr, configs.gamma, configs.k_epochs, configs.eps_clip,
@@ -40,18 +42,19 @@ ppo = PPO(configs.lr, configs.gamma, configs.k_epochs, configs.eps_clip,
           hidden_dim_actor=configs.hidden_dim_actor,
           num_mlp_layers_critic=configs.num_mlp_layers_critic,
           hidden_dim_critic=configs.hidden_dim_critic)
-path = './{}.pth'.format(str(N_JOBS_N) + '_' + str(N_MACHINES_N) + '_' + str(LOW) + '_' + str(HIGH))
-ppo.policy.load_state_dict(torch.load(path))
+path = './SavedNetwork/{}.pth'.format(str(N_JOBS_N) + '_' + str(N_MACHINES_N) + '_' + str(LOW) + '_' + str(HIGH))
+ppo.policy.load_state_dict(torch.load(path, map_location='cpu'))
 g_pool_step = g_pool_cal(graph_pool_type=configs.graph_pool_type,
                          batch_size=torch.Size([1, env.number_of_tasks, env.number_of_tasks]),
                          n_nodes=env.number_of_tasks,
                          device=device)
 
-dataLoaded = np.load('./BenchDataNmpy/' + benchmark + str(N_JOBS_P) + 'x' + str(N_MACHINES_P) + '.npy')
+#dataLoaded = np.load('./BenchDataNmpy/' + benchmark + str(N_JOBS_P) + 'x' + str(N_MACHINES_P) + '.npy')
+dataLoaded = np.load('./BenchDataNmpy/tai20x15.npy')
 dataset = []
 for i in range(dataLoaded.shape[0]):
     dataset.append((dataLoaded[i][0], dataLoaded[i][1]))
-
+#print(dataset)
 result = []
 t1 = time.time()
 for i, data in enumerate(dataset):
@@ -73,6 +76,8 @@ for i, data in enumerate(dataset):
                                mask=mask_tensor.unsqueeze(0))
             # action = sample_select_action(pi, omega)
             action = greedy_select_action(pi, candidate)
+            print("####### Action Selected #######: ", action)
+            #print(action)
 
         adj, fea, reward, done, candidate, mask = env.step(action)
         ep_reward += reward
@@ -82,7 +87,9 @@ for i, data in enumerate(dataset):
     # print(max(env.end_time))
     print('Instance' + str(i + 1) + ' makespan:', -ep_reward + env.posRewards)
     result.append(-ep_reward + env.posRewards)
+    break
 t2 = time.time()
+print((t2 - t1))
 file_writing_obj = open('./' + 'drltime_' + benchmark + '_' + str(N_JOBS_N) + 'x' + str(N_MACHINES_N) + '_' + str(N_JOBS_P) + 'x' + str(N_MACHINES_P) + '.txt', 'w')
 file_writing_obj.write(str((t2 - t1)/len(dataset)))
 

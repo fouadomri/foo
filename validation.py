@@ -59,7 +59,7 @@ if __name__ == '__main__':
     parser.add_argument('--low', type=int, default=1, help='LB of duration')
     parser.add_argument('--high', type=int, default=99, help='UB of duration')
     parser.add_argument('--seed', type=int, default=200, help='Cap seed for validate set generation')
-    parser.add_argument('--n_vali', type=int, default=100, help='validation set size')
+    parser.add_argument('--n_vali', type=int, default=1, help='validation set size')
     params = parser.parse_args()
 
     N_JOBS_P = params.Pn_j
@@ -85,8 +85,8 @@ if __name__ == '__main__':
               num_mlp_layers_critic=configs.num_mlp_layers_critic,
               hidden_dim_critic=configs.hidden_dim_critic)
 
-    path = './{}.pth'.format(str(N_JOBS_N) + '_' + str(N_MACHINES_N) + '_' + str(LOW) + '_' + str(HIGH))
-    ppo.policy.load_state_dict(torch.load(path))
+    path = './SavedNetwork/{}.pth'.format(str(N_JOBS_N) + '_' + str(N_MACHINES_N) + '_' + str(LOW) + '_' + str(HIGH))
+    ppo.policy.load_state_dict(torch.load(path,map_location=torch.device('cpu')))
 
     SEEDs = range(0, params.seed, 10)
     result = []
