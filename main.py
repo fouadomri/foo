@@ -278,6 +278,17 @@ def read_root(durations:Input, orders:Input, N_JOBS_N=30, N_MACHINES_N=20):
     print("JSON: ", jsonStr)
     return {"schedule": jsonStr}
 
+
+# {
+#   "durations": {
+#     "data": [[26, 16],[68, 42],[55, 76]]
+#   },
+#   "orders": {
+#     "data": [[1, 2],[1, 2],[2, 1]]
+#   }
+# }
+
+
 #if __name__ == '__main__':
 #    import cProfile
 #    import pstats
