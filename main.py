@@ -241,6 +241,8 @@ def schedule(dataset, ppo, env, g_pool_step):
         # print(t6 - t4)
         # print(max(env.end_time))
         print('Instance' + str(i + 1) + ' makespan:', -ep_reward + env.posRewards)
+        makespan = -ep_reward + env.posRewards
+        #action_summary["makespan"] = makespan
         print(data)
         result.append(-ep_reward + env.posRewards)
         #break
@@ -257,7 +259,7 @@ def schedule(dataset, ppo, env, g_pool_step):
     # print(np.array(result, dtype=np.single).mean())
     np.save('drlResult_' + str(N_JOBS_N) + 'x' + str(N_MACHINES_N) + '_' + str(N_JOBS_P) + 'x' + str(N_MACHINES_P) + '_Seed' + str(SEED), np.array(result, dtype=np.single))
 
-    return results_summary
+    return results_summary, str(makespan)
 
 class Input(BaseModel):
     data: List[List[int]]
@@ -272,11 +274,11 @@ def read_root(durations:Input, orders:Input, N_JOBS_N=30, N_MACHINES_N=20):
     print("N_JOBS_P: ", N_JOBS_P)
     N_MACHINES_P = dataset[0][1].shape[1]
     ppo, env, g_pool_step = init_logic(N_JOBS_P, N_MACHINES_P, N_JOBS_N, N_MACHINES_N)
-    summary_results = schedule(dataset, ppo, env, g_pool_step)
+    summary_results, makespan = schedule(dataset, ppo, env, g_pool_step)
     import json
     jsonStr = json.dumps(summary_results)
     print("JSON: ", jsonStr)
-    return {"schedule": jsonStr}
+    return {"schedule": jsonStr, "makespan": makespan}
 
 
 # {
