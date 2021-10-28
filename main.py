@@ -266,9 +266,9 @@ class Input(BaseModel):
 
 
 @app.post("/")
-def read_root(durations:Input, orders:Input, N_JOBS_N=30, N_MACHINES_N=20):
-    print(durations.data)
-    dataset = [(np.array(durations.data), np.array(orders.data))]
+def read_root(durationsAndOrders:Input, machineAssignments:Input, N_JOBS_N=30, N_MACHINES_N=20):
+    #print(durations.data)
+    dataset = [(np.array(durationsAndOrders.data), np.array(machineAssignments.data))]
     print("DATASET: ", dataset)
     N_JOBS_P = dataset[0][1].shape[0]
     print("N_JOBS_P: ", N_JOBS_P)
