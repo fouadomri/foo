@@ -49,53 +49,55 @@ g_pool_step = g_pool_cal(graph_pool_type=configs.graph_pool_type,
                          n_nodes=env.number_of_tasks,
                          device=device)
 
-#dataLoaded = np.load('./BenchDataNmpy/' + benchmark + str(N_JOBS_P) + 'x' + str(N_MACHINES_P) + '.npy')
-dataLoaded = np.load('./BenchDataNmpy/tai20x15.npy')
+dataLoaded = np.load('./BenchDataNmpy/' + benchmark + str(N_JOBS_P) + 'x' + str(N_MACHINES_P) + '.npy')
+#dataLoaded = np.load('./BenchDataNmpy/tai20x15.npy')
 dataset = []
 for i in range(dataLoaded.shape[0]):
     dataset.append((dataLoaded[i][0], dataLoaded[i][1]))
 #print(dataset)
-result = []
-t1 = time.time()
-for i, data in enumerate(dataset):
-    adj, fea, candidate, mask = env.reset(data)
-    ep_reward = - env.max_endTime
-    while True:
-        # Running policy_old:
-        fea_tensor = torch.from_numpy(np.copy(fea)).to(device)
-        adj_tensor = torch.from_numpy(np.copy(adj)).to(device).to_sparse()
-        candidate_tensor = torch.from_numpy(np.copy(candidate)).to(device)
-        mask_tensor = torch.from_numpy(np.copy(mask)).to(device)
 
-        with torch.no_grad():
-            pi, _ = ppo.policy(x=fea_tensor,
-                               graph_pool=g_pool_step,
-                               padded_nei=None,
-                               adj=adj_tensor,
-                               candidate=candidate_tensor.unsqueeze(0),
-                               mask=mask_tensor.unsqueeze(0))
-            # action = sample_select_action(pi, omega)
-            action = greedy_select_action(pi, candidate)
-            print("####### Action Selected #######: ", action)
-            #print(action)
+def run_schedule(dataset):
+    result = []
+    t1 = time.time()
+    for i, data in enumerate(dataset):
+        adj, fea, candidate, mask = env.reset(data)
+        ep_reward = - env.max_endTime
+        while True:
+            # Running policy_old:
+            fea_tensor = torch.from_numpy(np.copy(fea)).to(device)
+            adj_tensor = torch.from_numpy(np.copy(adj)).to(device).to_sparse()
+            candidate_tensor = torch.from_numpy(np.copy(candidate)).to(device)
+            mask_tensor = torch.from_numpy(np.copy(mask)).to(device)
 
-        adj, fea, reward, done, candidate, mask = env.step(action)
-        ep_reward += reward
+            with torch.no_grad():
+                pi, _ = ppo.policy(x=fea_tensor,
+                                graph_pool=g_pool_step,
+                                padded_nei=None,
+                                adj=adj_tensor,
+                                candidate=candidate_tensor.unsqueeze(0),
+                                mask=mask_tensor.unsqueeze(0))
+                # action = sample_select_action(pi, omega)
+                action = greedy_select_action(pi, candidate)
+                print("####### Action Selected #######: ", action)
+                #print(action)
 
-        if done:
-            break
-    # print(max(env.end_time))
-    print('Instance' + str(i + 1) + ' makespan:', -ep_reward + env.posRewards)
-    result.append(-ep_reward + env.posRewards)
-    break
-t2 = time.time()
-print((t2 - t1))
-file_writing_obj = open('./' + 'drltime_' + benchmark + '_' + str(N_JOBS_N) + 'x' + str(N_MACHINES_N) + '_' + str(N_JOBS_P) + 'x' + str(N_MACHINES_P) + '.txt', 'w')
-file_writing_obj.write(str((t2 - t1)/len(dataset)))
+            adj, fea, reward, done, candidate, mask, start_time, row, column, dur_a = env.step(action)
+            ep_reward += reward
 
-# print(result)
-# print(np.array(result, dtype=np.single).mean())
-np.save('drlResult_' + benchmark + '_' + str(N_JOBS_N) + 'x' + str(N_MACHINES_N) + '_' + str(N_JOBS_P) + 'x' + str(N_MACHINES_P), np.array(result, dtype=np.single))
+            if done:
+                break
+        # print(max(env.end_time))
+        print('Instance' + str(i + 1) + ' makespan:', -ep_reward + env.posRewards)
+        result.append(-ep_reward + env.posRewards)
+        break
+    t2 = time.time()
+    print((t2 - t1))
+    file_writing_obj = open('./' + 'drltime_' + benchmark + '_' + str(N_JOBS_N) + 'x' + str(N_MACHINES_N) + '_' + str(N_JOBS_P) + 'x' + str(N_MACHINES_P) + '.txt', 'w')
+    file_writing_obj.write(str((t2 - t1)/len(dataset)))
+
+    # print(result)
+    # print(np.array(result, dtype=np.single).mean())
+    np.save('drlResult_' + benchmark + '_' + str(N_JOBS_N) + 'x' + str(N_MACHINES_N) + '_' + str(N_JOBS_P) + 'x' + str(N_MACHINES_P), np.array(result, dtype=np.single))
 
 
 '''refer = np.array([1231, 1244, 1218, 1175, 1224, 1238, 1227, 1217, 1274, 1241])
@@ -104,3 +106,18 @@ refer2 = np.array([5464, 5181, 5568, 5339, 5392, 5342, 5436, 5394, 5358, 5183])
 gap = (np.array(result) - refer2)/refer2
 print(gap)
 print(gap.mean())'''
+
+if __name__ == '__main__':
+    import cProfile
+    import pstats
+
+    prof = cProfile.Profile()
+    # cProfile.run('test(dataset)', filename='restats.txt')
+    prof.run('run_schedule(dataset)')
+    # prof.sort_stats('cumtime')
+    prof.dump_stats('profile_benchmark'+ benchmark + str(N_JOBS_P) + 'x' + str(N_MACHINES_P)+'.prof')
+
+    stream = open('profile_benchmark'+ benchmark + str(N_JOBS_P) + 'x' + str(N_MACHINES_P)+'.txt', 'w')
+    stats = pstats.Stats('profile_benchmark'+ benchmark + str(N_JOBS_P) + 'x' + str(N_MACHINES_P)+'.prof', stream=stream)
+    # stats.sort_stats('cumtime')
+    stats.print_stats()

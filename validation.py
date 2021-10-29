@@ -34,7 +34,7 @@ def validate(vali_set, model):
                               mask=mask_tensor.unsqueeze(0))
             # action = sample_select_action(pi, candidate)
             action = greedy_select_action(pi, candidate)
-            adj, fea, reward, done, candidate, mask = env.step(action.item())
+            adj, fea, reward, done, candidate, mask, startTime_a, row, col, dur_a = env.step(action.item())
             rewards += reward
             if done:
                 break

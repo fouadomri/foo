@@ -198,6 +198,7 @@ def main():
     optimal_gaps = []
     optimal_gap = 1
     record = 100000
+    t9 = time.time()
     for i_update in range(configs.max_updates):
 
         t3 = time.time()
@@ -247,8 +248,7 @@ def main():
                 memories[i].candidate_mb.append(candidate_tensor_envs[i])
                 memories[i].mask_mb.append(mask_tensor_envs[i])
                 memories[i].a_mb.append(a_idx_envs[i])
-
-                adj, fea, reward, done, candidate, mask = envs[i].step(action_envs[i].item())
+                adj, fea, reward, done, candidate, mask, startTime_a, row, col, dur_a = envs[i].step(action_envs[i].item())
                 adj_envs.append(adj)
                 fea_envs.append(fea)
                 candidate_envs.append(candidate)
@@ -276,25 +276,48 @@ def main():
         
         # validate and save use mean performance
         t4 = time.time()
-        if i_update % 99 == 0:
-            vali_result = - validate(vali_data, ppo.policy).mean()
-            validation_log.append(vali_result)
-            if vali_result < record:
-                torch.save(ppo.policy.state_dict(), './{}.pth'.format(
-                    str(configs.n_j) + '_' + str(configs.n_m) + '_' + str(configs.low) + '_' + str(configs.high)))
-                record = vali_result
-            print('The validation quality is:', vali_result)
-            file_writing_obj1 = open(
-                './' + 'vali_' + str(configs.n_j) + '_' + str(configs.n_m) + '_' + str(configs.low) + '_' + str(configs.high) + '.txt', 'w')
-            file_writing_obj1.write(str(validation_log))
-        t5 = time.time()
-
+        # if i_update % 99 == 0:
+        #     vali_result = - validate(vali_data, ppo.policy).mean()
+        #     validation_log.append(vali_result)
+        #     if vali_result < record:
+        #         torch.save(ppo.policy.state_dict(), './{}.pth'.format(
+        #             str(configs.n_j) + '_' + str(configs.n_m) + '_' + str(configs.low) + '_' + str(configs.high)))
+        #         record = vali_result
+        #     print('The validation quality is:', vali_result)
+        #     file_writing_obj1 = open(
+        #         './' + 'vali_' + str(configs.n_j) + '_' + str(configs.n_m) + '_' + str(configs.low) + '_' + str(configs.high) + '.txt', 'w')
+        # #     file_writing_obj1.write(str(validation_log))
+        # t5 = time.time()
+        # training_time = t4 -t3
+        # validation_time = t5 - t4
+        # file_writing_training = open(
+        #         './' + 'training' + str(configs.n_j) + '_' + str(configs.n_m) + '_' + str(configs.low) + '_' + str(configs.high) + '.txt', 'w')
+        # file_writing_training.write(str(training_time))
+    
+        # file_writing_validation = open(
+        #         './' + 'validation' + str(configs.n_j) + '_' + str(configs.n_m) + '_' + str(configs.low) + '_' + str(configs.high) + '.txt', 'w')
+        # file_writing_validation.write(str(validation_time))
         # print('Training:', t4 - t3)
         # print('Validation:', t5 - t4)
-
+    t10 = time.time()
+    training_time_all = t10 -t9 
+    file_writing_training_all = open(
+                './' + 'training_all' + str(configs.n_j) + '_' + str(configs.n_m) + '_' + str(configs.low) + '_' + str(configs.high) + '.txt', 'w')
+    file_writing_training_all.write(str(training_time_all))
 
 if __name__ == '__main__':
-    total1 = time.time()
-    main()
-    total2 = time.time()
+    import cProfile
+    import pstats
+    #total1 = time.time()
+    prof = cProfile.Profile()
+    prof.run('main()')
+    # prof.sort_stats('cumtime')
+    prof.dump_stats('profile_training.prof')
+
+    stream = open('profile_training.txt', 'w')
+    stats = pstats.Stats('profile_training.prof', stream=stream)
+    #stats.sort_stats('cumtime')
+    stats.print_stats()
+    #main()
+    #total2 = time.time()
     # print(total2 - total1)

@@ -42,18 +42,18 @@ class SJSSP(gym.Env, EzPickle):
             self.step_count += 1
             self.finished_mark[row, col] = 1
             dur_a = self.dur[row, col]
-            print("*******************************")
-            print("action: ", action)
-            print("action duration: ", dur_a)
-            print("all durations: ", self.dur)
-            print("step count: ", self.step_count)
+            # print("*******************************")
+            # print("action: ", action)
+            # print("action duration: ", dur_a)
+            # print("all durations: ", self.dur)
+            # print("step count: ", self.step_count)
             
             self.partial_sol_sequeence.append(action)
 
             # UPDATE STATE:
             # permissible left shift
             startTime_a, flag = permissibleLeftShift(a=action, durMat=self.dur, mchMat=self.m, mchsStartTimes=self.mchsStartTimes, opIDsOnMchs=self.opIDsOnMchs)
-            print("start time action: ", startTime_a)
+            # print("start time action: ", startTime_a)
             self.flags.append(flag)
             # update omega or mask
             if action not in self.last_col:
@@ -64,7 +64,7 @@ class SJSSP(gym.Env, EzPickle):
             self.temp1[row, col] = startTime_a + dur_a
 
             self.LBs = calEndTimeLB(self.temp1, self.dur_cp)
-            print("LBs: ", self.LBs)
+            # print("LBs: ", self.LBs)
             # adj matrix
             precd, succd = self.getNghbs(action, self.opIDsOnMchs)
             self.adj[action] = 0
@@ -84,8 +84,8 @@ class SJSSP(gym.Env, EzPickle):
             reward = configs.rewardscale
             self.posRewards += reward
         self.max_endTime = self.LBs.max()
-        print("max_endTime: ", self.max_endTime)
-        print("*******************************")
+        # print("max_endTime: ", self.max_endTime)
+        # print("*******************************")
         return self.adj, fea, reward, self.done(), self.omega, self.mask, startTime_a, row, col, dur_a
 
     @override
@@ -113,12 +113,12 @@ class SJSSP(gym.Env, EzPickle):
         # initialize features
         self.LBs = np.cumsum(self.dur, axis=1, dtype=np.single)
         self.initQuality = self.LBs.max() if not configs.init_quality_flag else 0
-        print("4444444444444444444444444444444444")
-        print("IN RESET: ")
-        print("LBs: ", self.LBs)
-        print("Durations: ", self.dur)
-        print("max_endTime: ", self.initQuality)
-        print("4444444444444444444444444444444444")
+        # print("4444444444444444444444444444444444")
+        # print("IN RESET: ")
+        # print("LBs: ", self.LBs)
+        # print("Durations: ", self.dur)
+        # print("max_endTime: ", self.initQuality)
+        # print("4444444444444444444444444444444444")
         self.max_endTime = self.initQuality
         self.finished_mark = np.zeros_like(self.m, dtype=np.single)
 
