@@ -264,3 +264,17 @@ if __name__ == '__main__':
 #
 #     $ conda deactivate
 
+
+
+import pstats,io
+result=io.StringIO()
+filename='profile_training.prof'
+pstats.Stats(filename,stream=result).sort_stats('tottime').print_stats()
+result=result.getvalue()
+# chop the string into a csv-like buffer
+result='ncalls'+result.split('ncalls')[-1]
+result='\n'.join([','.join(line.rstrip().split(None,6)) for line in result.split('\n')])
+# save it to disk
+f=open(filename.rsplit('.')[0]+'.csv','w')
+f.write(result)
+f.close()
